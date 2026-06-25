@@ -39,7 +39,7 @@ lemma iterate_affineStep_apply (c : ℤ) (B : End3) (n : ℕ) (x : Vec3) :
       x + ((n : ℤ) * c) • B x + c ^ 2 • (remainder c B n) x := by
   induction n generalizing x with
   | zero =>
-      simp [affineStep, affineEnd, remainder]
+      simp [remainder]
   | succ n ih =>
       rw [Function.iterate_succ_apply', ih]
       change
@@ -59,14 +59,14 @@ lemma prime_block (p : ℕ) (s : ℤ) (B : End3) :
   funext x
   rw [iterate_affineStep_apply]
   ext i
-  simp [affineStep, affineEnd, nextB]
+  simp only [affineStep, affineEnd, nextB, LinearMap.add_apply, LinearMap.id_apply,
+    LinearMap.smul_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
   ring
 
 lemma nextB_mod_prime (p : ℕ) (s : ℤ) (B : End3) (x : Vec3) (i : Fin 3) :
     (p : ℤ) ∣ nextB p s B x i - B x i := by
   refine ⟨s * (remainder ((p : ℤ) ^ 2 * s) B p x i), ?_⟩
   simp [nextB]
-  ring
 
 theorem zero_of_affine_iterate_zero
     (p : ℕ) (hp : p.Prime) (x : Vec3) (i : Fin 3) (hx : x i = 0)
@@ -83,7 +83,11 @@ theorem zero_of_affine_iterate_zero
       have hcne : (p : ℤ) ^ 2 * s ≠ 0 := mul_ne_zero (pow_ne_zero _ hpne) hs
       have hexp := congrArg (fun y : Vec3 => y i)
         (iterate_affineStep_apply ((p : ℤ) ^ 2 * s) B q x)
-      rw [hz, hx] at hexp
+      have hexp' :
+          ((q : ℤ) * ((p : ℤ) ^ 2 * s)) * B x i +
+              (((p : ℤ) ^ 2 * s) ^ 2) *
+                (remainder ((p : ℤ) ^ 2 * s) B q x i) = 0 := by
+        simpa only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, hz, hx, zero_add] using hexp
       have hinner :
           (q : ℤ) * B x i + ((p : ℤ) ^ 2 * s) *
             (remainder ((p : ℤ) ^ 2 * s) B q x i) = 0 := by
@@ -91,12 +95,11 @@ theorem zero_of_affine_iterate_zero
             ((p : ℤ) ^ 2 * s) *
                 ((q : ℤ) * B x i + ((p : ℤ) ^ 2 * s) *
                   (remainder ((p : ℤ) ^ 2 * s) B q x i)) = 0 := by
-          simpa only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, zero_add] using
-            (show
-              ((q : ℤ) * ((p : ℤ) ^ 2 * s)) * B x i +
+          calc
+            _ = ((q : ℤ) * ((p : ℤ) ^ 2 * s)) * B x i +
                   (((p : ℤ) ^ 2 * s) ^ 2) *
-                    (remainder ((p : ℤ) ^ 2 * s) B q x i) = 0 by
-                simpa [smul_eq_mul] using hexp)
+                    (remainder ((p : ℤ) ^ 2 * s) B q x i) := by ring
+            _ = 0 := hexp'
         exact (mul_eq_zero.mp hfac).resolve_left hcne
       have hpTerm : (p : ℤ) ∣
           ((p : ℤ) ^ 2 * s) * (remainder ((p : ℤ) ^ 2 * s) B q x i) := by
