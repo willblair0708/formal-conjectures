@@ -34,7 +34,7 @@ jobs:
           set -o pipefail
           (
             set -e
-            lake build FormalConjectures.ErdosProblems.Erdos686Padic
+            lake env lean FormalConjectures/ErdosProblems/Erdos686Padic.lean
           ) 2>&1 | tee lean-check.log
       - name: Upload diagnostics
         if: always()
