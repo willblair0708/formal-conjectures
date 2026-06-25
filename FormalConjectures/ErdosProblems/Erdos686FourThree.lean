@@ -159,4 +159,102 @@ private lemma exists_scale (R : ℝ) (hRpos : 0 < R) (hRone : R < 1) :
   rw [← hkdecomp, pow_succ]
   nlinarith [eta_pos]
 
+private noncomputable def pcoord (x : Vec3) : ℝ :=
+  x 0 - x 1 * rho / 2 - x 2 * rho ^ 2 / 2
+
+private noncomputable def scoord (x : Vec3) : ℝ :=
+  x 1 * rho - x 2 * rho ^ 2
+
+private noncomputable def qcoord (x : Vec3) : ℝ :=
+  pcoord x ^ 2 + (3 / 4 : ℝ) * scoord x ^ 2
+
+private lemma eval_mul_qcoord (x : Vec3) : eval x * qcoord x = (norm x : ℝ) := by
+  have h :
+      eval x * qcoord x - (norm x : ℝ) =
+        (rho ^ 3 - 2) *
+          (-3 * (x 0 : ℝ) * (x 1 : ℝ) * (x 2 : ℝ) + (x 1 : ℝ) ^ 3 +
+            (x 2 : ℝ) ^ 3 * rho ^ 3 + 2 * (x 2 : ℝ) ^ 3) := by
+    simp [eval, qcoord, pcoord, scoord, norm]
+    ring
+  have hz : eval x * qcoord x - (norm x : ℝ) = 0 := by
+    rw [h, rho_cube]
+    ring
+  linarith
+
+private lemma reduced_coeff_bounds (x : Vec3) (t : ℕ) (ht : t ≤ 60)
+    (hnorm : norm x = -(t : ℤ)) (hlo : -eta < eval x) (hhi : eval x ≤ -1) :
+    -6 ≤ x 0 ∧ x 0 ≤ 4 ∧ -8 ≤ x 1 ∧ x 1 ≤ 6 ∧ -8 ≤ x 2 ∧ x 2 ≤ 6 := by
+  have hnormR : (norm x : ℝ) = -(t : ℝ) := by exact_mod_cast hnorm
+  have hid := eval_mul_qcoord x
+  rw [hnormR] at hid
+  have hqnonneg : 0 ≤ qcoord x := by
+    simp [qcoord]
+    positivity
+  have htR : (t : ℝ) ≤ 60 := by exact_mod_cast ht
+  have hqle : qcoord x ≤ 60 := by
+    nlinarith
+  have hp2 : pcoord x ^ 2 ≤ 60 := by
+    rw [qcoord] at hqle
+    nlinarith [sq_nonneg (scoord x)]
+  have hs2 : scoord x ^ 2 ≤ 80 := by
+    rw [qcoord] at hqle
+    nlinarith [sq_nonneg (pcoord x)]
+  have hpL : -8 < pcoord x := by nlinarith
+  have hpU : pcoord x < 8 := by nlinarith
+  have hsL : -9 < scoord x := by nlinarith
+  have hsU : scoord x < 9 := by nlinarith
+  have heL : -4 < eval x := by linarith [eta_lt_four]
+  have haid : 3 * (x 0 : ℝ) = eval x + 2 * pcoord x := by
+    simp [eval, pcoord]
+    ring
+  have hbid : 6 * (x 1 : ℝ) * rho = 2 * (eval x - pcoord x) + 3 * scoord x := by
+    simp [eval, pcoord, scoord]
+    ring
+  have hcid : 6 * (x 2 : ℝ) * rho ^ 2 = 2 * (eval x - pcoord x) - 3 * scoord x := by
+    simp [eval, pcoord, scoord]
+    ring
+  have haLr : (-7 : ℝ) < (x 0 : ℝ) := by nlinarith
+  have haUr : (x 0 : ℝ) < 5 := by nlinarith
+  have haLz : (-7 : ℤ) < x 0 := by exact_mod_cast haLr
+  have haUz : x 0 < (5 : ℤ) := by exact_mod_cast haUr
+  have hbProdL : (-17 : ℝ) / 2 < (x 1 : ℝ) * rho := by nlinarith
+  have hbProdU : (x 1 : ℝ) * rho < (41 : ℝ) / 6 := by nlinarith
+  have hcProdL : (-17 : ℝ) / 2 < (x 2 : ℝ) * rho ^ 2 := by nlinarith
+  have hcProdU : (x 2 : ℝ) * rho ^ 2 < (41 : ℝ) / 6 := by nlinarith
+  have hbL : -8 ≤ x 1 := by
+    by_contra h
+    have hb : x 1 ≤ -9 := by omega
+    have hbR : (x 1 : ℝ) ≤ -9 := by exact_mod_cast hb
+    have hbnonpos : (x 1 : ℝ) ≤ 0 := by linarith
+    have hmul : (x 1 : ℝ) * rho ≤ (x 1 : ℝ) * 1 :=
+      mul_le_mul_of_nonpos_left rho_gt_one.le hbnonpos
+    nlinarith
+  have hbU : x 1 ≤ 6 := by
+    by_contra h
+    have hb : 7 ≤ x 1 := by omega
+    have hbR : (7 : ℝ) ≤ (x 1 : ℝ) := by exact_mod_cast hb
+    have hbpos : 0 < (x 1 : ℝ) := by linarith
+    have hmul : (x 1 : ℝ) * 1 < (x 1 : ℝ) * rho :=
+      mul_lt_mul_of_pos_left rho_gt_one hbpos
+    nlinarith
+  have hrho2 : 1 < rho ^ 2 := by
+    nlinarith [sq_nonneg (rho - 1)]
+  have hcL : -8 ≤ x 2 := by
+    by_contra h
+    have hc : x 2 ≤ -9 := by omega
+    have hcR : (x 2 : ℝ) ≤ -9 := by exact_mod_cast hc
+    have hcnonpos : (x 2 : ℝ) ≤ 0 := by linarith
+    have hmul : (x 2 : ℝ) * rho ^ 2 ≤ (x 2 : ℝ) * 1 :=
+      mul_le_mul_of_nonpos_left hrho2.le hcnonpos
+    nlinarith
+  have hcU : x 2 ≤ 6 := by
+    by_contra h
+    have hc : 7 ≤ x 2 := by omega
+    have hcR : (7 : ℝ) ≤ (x 2 : ℝ) := by exact_mod_cast hc
+    have hcpos : 0 < (x 2 : ℝ) := by linarith
+    have hmul : (x 2 : ℝ) * 1 < (x 2 : ℝ) * rho ^ 2 :=
+      mul_lt_mul_of_pos_left hrho2 hcpos
+    nlinarith
+  omega
+
 end Erdos686FourThree
