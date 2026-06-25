@@ -14,12 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -/
 
-import FormalConjectures.Util.ProblemImports
+import Mathlib
 
 /-! Auxiliary p-adic lifting lemmas for Erdős Problem 686. -/
-
-set_option linter.style.ams_attribute false
-set_option linter.style.category_attribute false
 
 namespace Erdos686Padic
 
