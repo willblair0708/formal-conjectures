@@ -32,18 +32,17 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          {
-            if [ -f FormalConjectures/ErdosProblems/Erdos686FourThree.lean ]; then
-              lake build FormalConjectures.ErdosProblems.Erdos686FourThree
-            fi
+          (
+            set -e
+            lake build FormalConjectures.ErdosProblems.Erdos686FourThree
             lake build FormalConjectures.ErdosProblems.«686»
             cat > CheckAxioms.lean <<'EOF'
           import FormalConjectures.ErdosProblems.«686»
           #print axioms Erdos686.erdos_686.variants.four_three
           EOF
             lake env lean CheckAxioms.lean
-          } 2>&1 | tee lean-check.log
-      - name: Report result on scratch PR
+          ) 2>&1 | tee lean-check.log
+      - name: Report compact diagnostics on scratch PR
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
@@ -52,7 +51,10 @@ jobs:
             echo "Lean check outcome: **${{ steps.lean_check.outcome }}** for commit \`${GITHUB_SHA}\`."
             echo
             echo '```text'
-            tail -c 60000 lean-check.log || true
+            grep -n -E 'error:|warning: declaration uses|depends on axioms|uses sorry|unsolved goals|type mismatch|application type mismatch|unknown constant|unknown identifier|declaration has metavariables' lean-check.log | tail -n 300 || true
+            echo
+            echo '--- tail ---'
+            tail -n 80 lean-check.log || true
             echo '```'
           } > lean-comment.md
           gh pr comment 1 --body-file lean-comment.md
