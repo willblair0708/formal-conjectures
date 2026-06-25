@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - chatgpt/erdos-686-four-three
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
