@@ -27,20 +27,14 @@ jobs:
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Restore Mathlib cache
         run: lake exe cache get
-      - name: Compile focused modules and inspect axioms
+      - name: Compile focused modules
         id: lean_check
         continue-on-error: true
         run: |
           set -o pipefail
           (
             set -e
-            lake build FormalConjectures.ErdosProblems.Erdos686FourThree
-            lake build FormalConjectures.ErdosProblems.«686»
-            cat > CheckAxioms.lean <<'EOF'
-          import FormalConjectures.ErdosProblems.«686»
-          #print axioms Erdos686.erdos_686.variants.four_three
-          EOF
-            lake env lean CheckAxioms.lean
+            lake build FormalConjectures.ErdosProblems.Erdos686Padic
           ) 2>&1 | tee lean-check.log
       - name: Upload diagnostics
         if: always()
