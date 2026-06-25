@@ -1,0 +1,33 @@
+name: Check Erdos 686 four_three
+
+on:
+  push:
+    branches:
+      - chatgpt/erdos-686-four-three
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install elan
+        run: |
+          set -o pipefail
+          curl -sSfL https://github.com/leanprover/elan/releases/download/v1.4.2/elan-x86_64-unknown-linux-gnu.tar.gz | tar xz
+          ./elan-init -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Restore Mathlib cache
+        run: lake exe cache get
+      - name: Compile target
+        run: lake env lean FormalConjectures/ErdosProblems/686.lean
+      - name: Print axioms
+        run: |
+          cat > CheckAxioms.lean <<'EOF'
+          import FormalConjectures.ErdosProblems.«686»
+          #print axioms Erdos686.erdos_686.variants.four_three
+          EOF
+          lake env lean CheckAxioms.lean
