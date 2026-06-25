@@ -50,6 +50,19 @@ lemma iterate_affineStep_apply (c : ℤ) (B : End3) (n : ℕ) (x : Vec3) :
       simp [remainder]
       ring
 
+def liftB (p : ℕ) (B : End3) : End3 :=
+  B + remainder (p : ℤ) B p
+
+lemma first_prime_block (p : ℕ) (B : End3) :
+    (affineStep (p : ℤ) B)^[p] =
+      affineStep ((p : ℤ) ^ 2) (liftB p B) := by
+  funext x
+  rw [iterate_affineStep_apply]
+  ext i
+  simp only [affineStep, affineEnd, liftB, LinearMap.add_apply, LinearMap.id_apply,
+    LinearMap.smul_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+  ring
+
 def nextB (p : ℕ) (s : ℤ) (B : End3) : End3 :=
   B + ((p : ℤ) * s) • remainder ((p : ℤ) ^ 2 * s) B p
 
