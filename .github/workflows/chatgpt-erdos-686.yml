@@ -43,6 +43,27 @@ jobs:
           name: lean-check-log
           path: lean-check.log
           overwrite: true
+      - name: Bundle local Lean environment
+        if: always() && hashFiles('lean-release-url.txt') != ''
+        run: |
+          TOOLROOT="$(dirname "$(dirname "$(elan which lean)")")"
+          mkdir -p /tmp/lean-local/toolchains /tmp/lean-local/project
+          cp -a "$TOOLROOT" /tmp/lean-local/toolchains/lean-4.27.0
+          cp -a .lake /tmp/lean-local/project/.lake
+          cp -a FormalConjectures /tmp/lean-local/project/FormalConjectures
+          cp lakefile.toml lake-manifest.json lean-toolchain /tmp/lean-local/project/
+          du -sh /tmp/lean-local/toolchains/lean-4.27.0 /tmp/lean-local/project/.lake
+          tar -I 'zstd -1 -T0' -cf /tmp/lean-local.tar.zst -C /tmp lean-local
+          ls -lh /tmp/lean-local.tar.zst
+      - name: Upload local Lean environment
+        if: always() && hashFiles('lean-release-url.txt') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: lean-local-bundle
+          path: /tmp/lean-local.tar.zst
+          compression-level: 0
+          overwrite: true
+          retention-days: 1
       - name: Report compact diagnostics on scratch PR
         if: always()
         env:
