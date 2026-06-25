@@ -87,7 +87,7 @@ theorem zero_of_affine_iterate_zero
           ((q : ℤ) * ((p : ℤ) ^ 2 * s)) * B x i +
               (((p : ℤ) ^ 2 * s) ^ 2) *
                 (remainder ((p : ℤ) ^ 2 * s) B q x i) = 0 := by
-        simpa only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, hz, hx, zero_add] using hexp
+        simpa only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, hz, hx, zero_add] using hexp.symm
       have hinner :
           (q : ℤ) * B x i + ((p : ℤ) ^ 2 * s) *
             (remainder ((p : ℤ) ^ 2 * s) B q x i) = 0 := by
@@ -121,8 +121,9 @@ theorem zero_of_affine_iterate_zero
           have : r = 0 := Nat.eq_zero_of_not_pos hr
           subst r
           simp at hqr
-          exact hq hqr.symm
-        omega
+          exact hq hqr
+        rw [hqr]
+        exact (show r < 2 * r by omega).trans_le (Nat.mul_le_mul_right r hp2)
       let B' := nextB p s B
       have hB' : ¬ (p : ℤ) ∣ B' x i := by
         intro hd
@@ -137,6 +138,7 @@ theorem zero_of_affine_iterate_zero
           ((affineStep ((p : ℤ) ^ 2 * ((p : ℤ) * s)) B')^[r] x) i = 0 := by
         rw [hqr, Function.iterate_mul, prime_block] at hz
         exact hz
-      exact ih r hrlt ((p : ℤ) * s) hs' B' hB' hz'
+      have hr0 := ih r hrlt ((p : ℤ) * s) hs' B' hB' hz'
+      rw [hqr, hr0, mul_zero]
 
 end Erdos686Padic
