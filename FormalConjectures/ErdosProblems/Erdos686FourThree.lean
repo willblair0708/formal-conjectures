@@ -96,40 +96,44 @@ private lemma norm_stepM (x : Vec3) : norm (stepM x) = norm x := by
 
 private lemma eval_stepN (x : Vec3) : eval (stepN x) = (rho - 1) * eval x := by
   simp [eval, stepN, vec]
+  ring_nf
   nlinarith [rho_cube]
 
 private lemma eval_stepM (x : Vec3) : eval (stepM x) = eta * eval x := by
   simp [eval, stepM, vec, eta]
+  ring_nf
   nlinarith [rho_cube]
 
 private lemma norm_iterN (k : ℕ) (x : Vec3) : norm (iterN k x) = norm x := by
-  induction k with
+  induction k generalizing x with
   | zero => simp [iterN]
   | succ k ih =>
-      rw [iterN, Function.iterate_succ_apply, norm_stepN]
-      exact ih
+      rw [iterN, Function.iterate_succ_apply]
+      calc
+        norm (stepN^[k] (stepN x)) = norm (stepN x) := ih (stepN x)
+        _ = norm x := norm_stepN x
 
 private lemma norm_iterM (k : ℕ) (x : Vec3) : norm (iterM k x) = norm x := by
-  induction k with
+  induction k generalizing x with
   | zero => simp [iterM]
   | succ k ih =>
-      rw [iterM, Function.iterate_succ_apply, norm_stepM]
-      exact ih
+      rw [iterM, Function.iterate_succ_apply]
+      calc
+        norm (stepM^[k] (stepM x)) = norm (stepM x) := ih (stepM x)
+        _ = norm x := norm_stepM x
 
 private lemma eval_iterM (k : ℕ) (x : Vec3) : eval (iterM k x) = eta ^ k * eval x := by
-  induction k with
+  induction k generalizing x with
   | zero => simp [iterM]
   | succ k ih =>
-      rw [iterM, Function.iterate_succ_apply, eval_stepM, ih, pow_succ]
-      ring
+      rw [iterM, Function.iterate_succ_apply]
+      calc
+        eval (stepM^[k] (stepM x)) = eta ^ k * eval (stepM x) := ih (stepM x)
+        _ = eta ^ k * (eta * eval x) := by rw [eval_stepM]
+        _ = eta ^ (k + 1) * eval x := by rw [pow_succ]; ring
 
 private lemma iterN_iterM (k : ℕ) (x : Vec3) : iterN k (iterM k x) = x := by
-  induction k with
-  | zero => simp [iterN, iterM]
-  | succ k ih =>
-      rw [iterN, iterM, Function.iterate_succ_apply, Function.iterate_succ_apply]
-      rw [stepN_stepM]
-      exact ih
+  exact (Function.LeftInverse.iterate stepN_stepM k) x
 
 private lemma exists_scale (R : ℝ) (hRpos : 0 < R) (hRone : R < 1) :
     ∃ k : ℕ, 0 < k ∧ 1 ≤ R * eta ^ k ∧ R * eta ^ k < eta := by
@@ -137,8 +141,9 @@ private lemma exists_scale (R : ℝ) (hRpos : 0 < R) (hRone : R < 1) :
     obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt R⁻¹ eta_gt_one
     refine ⟨k, ?_⟩
     have hRne : R ≠ 0 := ne_of_gt hRpos
-    rw [← inv_lt_iff₀ hRpos] at hk
-    exact hk.le
+    have hmul := mul_lt_mul_of_pos_right hk hRpos
+    rw [inv_mul_cancel₀ hRne] at hmul
+    exact hmul.le
   let k := Nat.find hex
   have hk : 1 ≤ R * eta ^ k := Nat.find_spec hex
   have hkpos : 0 < k := by
@@ -148,9 +153,10 @@ private lemma exists_scale (R : ℝ) (hRpos : 0 < R) (hRone : R < 1) :
     exact (not_le_of_gt hRone) hk
   have hprev : R * eta ^ (k - 1) < 1 := by
     apply lt_of_not_ge
-    exact Nat.find_min hex (Nat.sub_one_lt hkpos)
+    exact Nat.find_min hex (Nat.sub_one_lt (Nat.ne_of_gt hkpos))
   refine ⟨k, hkpos, hk, ?_⟩
-  conv_lhs => rw [← Nat.sub_add_cancel hkpos.le, pow_succ]
+  have hkdecomp : k - 1 + 1 = k := Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr (Nat.ne_of_gt hkpos))
+  rw [← hkdecomp, pow_succ]
   nlinarith [eta_pos]
 
 end Erdos686FourThree
