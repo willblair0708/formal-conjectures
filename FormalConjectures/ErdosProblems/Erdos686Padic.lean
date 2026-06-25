@@ -41,10 +41,13 @@ private lemma iterate_affineStep_apply (c : ℤ) (B : End3) (n : ℕ) (x : Vec3)
   | zero =>
       simp [affineStep, affineEnd, remainder]
   | succ n ih =>
-      rw [Function.iterate_succ_apply']
-      rw [ih]
+      rw [Function.iterate_succ_apply', ih]
+      change
+        (x + ((n : ℤ) * c) • B x + c ^ 2 • (remainder c B n) x) +
+            c • B (x + ((n : ℤ) * c) • B x + c ^ 2 • (remainder c B n) x) = _
+      rw [B.map_add, B.map_add, B.map_smul, B.map_smul]
       ext i
-      simp [affineStep, affineEnd, remainder]
+      simp [remainder]
       ring
 
 end Erdos686Padic
