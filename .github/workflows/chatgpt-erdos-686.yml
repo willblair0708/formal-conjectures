@@ -16,22 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Compute number-field data with PARI/GP
-        id: pari_check
-        continue-on-error: true
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pari-gp
-          gp -q <<'EOF' 2>&1 | tee pari-check.log
-          bnf = bnfinit(x^3 - 2);
-          print("class group = ", bnf.clgp);
-          print("fundamental units = ", bnf.fu);
-          fordiv(60, t, print("NORM ", -t, ": ", bnfisintnorm(bnf, -t)));
-          E = ellinit([0,0,0,-48,272]);
-          print("ellglobalred = ", ellglobalred(E));
-          print("ellrank = ", ellrank(E));
-          print("ellsearch = ", ellsearch(E));
-          EOF
       - name: Install elan
         run: |
           set -o pipefail
@@ -40,13 +24,16 @@ jobs:
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Restore Mathlib cache
         run: lake exe cache get
-      - name: Compile and inspect axioms
+      - name: Compile focused modules and inspect axioms
         id: lean_check
         continue-on-error: true
         run: |
           set -o pipefail
           {
-            lake env lean FormalConjectures/ErdosProblems/686.lean
+            if [ -f FormalConjectures/ErdosProblems/Erdos686FourThree.lean ]; then
+              lake build FormalConjectures.ErdosProblems.Erdos686FourThree
+            fi
+            lake build FormalConjectures.ErdosProblems.«686»
             cat > CheckAxioms.lean <<'EOF'
           import FormalConjectures.ErdosProblems.«686»
           #print axioms Erdos686.erdos_686.variants.four_three
@@ -61,14 +48,8 @@ jobs:
           {
             echo "Lean check outcome: **${{ steps.lean_check.outcome }}** for commit \`${GITHUB_SHA}\`."
             echo
-            echo '### Lean output'
             echo '```text'
-            tail -c 50000 lean-check.log || true
-            echo '```'
-            echo
-            echo '### PARI/GP output'
-            echo '```text'
-            tail -c 50000 pari-check.log || true
+            tail -c 60000 lean-check.log || true
             echo '```'
           } > lean-comment.md
           gh pr comment 1 --body-file lean-comment.md
