@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
   check:
@@ -22,12 +24,32 @@ jobs:
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Restore Mathlib cache
         run: lake exe cache get
-      - name: Compile target
-        run: lake env lean FormalConjectures/ErdosProblems/686.lean
-      - name: Print axioms
+      - name: Compile and inspect axioms
+        id: lean_check
+        continue-on-error: true
         run: |
-          cat > CheckAxioms.lean <<'EOF'
+          set -o pipefail
+          {
+            lake env lean FormalConjectures/ErdosProblems/686.lean
+            cat > CheckAxioms.lean <<'EOF'
           import FormalConjectures.ErdosProblems.«686»
           #print axioms Erdos686.erdos_686.variants.four_three
           EOF
-          lake env lean CheckAxioms.lean
+            lake env lean CheckAxioms.lean
+          } 2>&1 | tee lean-check.log
+      - name: Report result on scratch PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Lean check outcome: **${{ steps.lean_check.outcome }}** for commit \`${GITHUB_SHA}\`."
+            echo
+            echo '```text'
+            tail -c 60000 lean-check.log || true
+            echo '```'
+          } > lean-comment.md
+          gh pr comment 1 --body-file lean-comment.md
+      - name: Propagate failure
+        if: steps.lean_check.outcome != 'success'
+        run: exit 1
