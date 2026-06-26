@@ -34,7 +34,7 @@ jobs:
           set -o pipefail
           (
             set -e
-            lake env lean FormalConjectures/ErdosProblems/Erdos686OrbitCases.lean
+            lake build FormalConjectures.ErdosProblems.Erdos686OrbitCases
           ) 2>&1 | tee lean-check.log
       - name: Upload diagnostics
         if: always()
