@@ -40,9 +40,9 @@ def step (R : Type*) [CommRing R] (x : Vec R) : Vec R :=
 lemma iterate_step (R : Type*) [CommRing R] (k : ℕ) (x : Vec R) :
     (step R)^[k] x = (nMat R) ^ k *ᵥ x := by
   induction k generalizing x with
-  | zero => simp [step]
+  | zero => simp
   | succ k ih =>
-      rw [Function.iterate_succ_apply, ih]
+      rw [Function.iterate_succ_apply, ih, step]
       rw [← Matrix.mulVec_mulVec, ← pow_succ]
 
 def castVec (m : ℕ) (x : Vec ℤ) : Vec (ZMod m) :=
@@ -59,10 +59,10 @@ lemma cast_iterate_step (m k : ℕ) (x : Vec ℤ) :
   induction k generalizing x with
   | zero => simp
   | succ k ih =>
-      rw [Function.iterate_succ_apply, Function.iterate_succ_apply, cast_step, ih]
+      rw [Function.iterate_succ_apply, Function.iterate_succ_apply, ih, cast_step]
 
 lemma pow_eq_pow_mod {R : Type*} [Monoid R] (A : R) (L k : ℕ)
-    (hL : 0 < L) (hperiod : A ^ L = 1) :
+    (_hL : 0 < L) (hperiod : A ^ L = 1) :
     A ^ k = A ^ (k % L) := by
   calc
     A ^ k = A ^ (k % L + L * (k / L)) := by rw [Nat.mod_add_div]
