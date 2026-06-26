@@ -27,14 +27,14 @@ jobs:
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Restore Mathlib cache
         run: lake exe cache get
-      - name: Compile focused modules
+      - name: Compile focused module
         id: lean_check
         continue-on-error: true
         run: |
           set -o pipefail
           (
             set -e
-            lake env lean FormalConjectures/ErdosProblems/Erdos686Orbit.lean
+            lake env lean FormalConjectures/ErdosProblems/Erdos686OrbitCases.lean
           ) 2>&1 | tee lean-check.log
       - name: Upload diagnostics
         if: always()
@@ -43,27 +43,6 @@ jobs:
           name: lean-check-log
           path: lean-check.log
           overwrite: true
-      - name: Bundle local Lean environment
-        if: always() && hashFiles('lean-release-url.txt') != ''
-        run: |
-          TOOLROOT="$(dirname "$(dirname "$(elan which lean)")")"
-          mkdir -p /tmp/lean-local/toolchains /tmp/lean-local/project
-          cp -a "$TOOLROOT" /tmp/lean-local/toolchains/lean-4.27.0
-          cp -a .lake /tmp/lean-local/project/.lake
-          cp -a FormalConjectures /tmp/lean-local/project/FormalConjectures
-          cp lakefile.toml lake-manifest.json lean-toolchain /tmp/lean-local/project/
-          du -sh /tmp/lean-local/toolchains/lean-4.27.0 /tmp/lean-local/project/.lake
-          tar -I 'zstd -1 -T0' -cf /tmp/lean-local.tar.zst -C /tmp lean-local
-          ls -lh /tmp/lean-local.tar.zst
-      - name: Upload local Lean environment
-        if: always() && hashFiles('lean-release-url.txt') != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: lean-local-bundle
-          path: /tmp/lean-local.tar.zst
-          compression-level: 0
-          overwrite: true
-          retention-days: 1
       - name: Report compact diagnostics on scratch PR
         if: always()
         env:
@@ -76,7 +55,7 @@ jobs:
             grep -n -E 'error:|warning: declaration uses|depends on axioms|uses sorry|unsolved goals|type mismatch|application type mismatch|unknown constant|unknown identifier|declaration has metavariables' lean-check.log | tail -n 300 || true
             echo
             echo '--- tail ---'
-            tail -n 80 lean-check.log || true
+            tail -n 100 lean-check.log || true
             echo '```'
           } > lean-comment.md
           gh pr comment 1 --body-file lean-comment.md
