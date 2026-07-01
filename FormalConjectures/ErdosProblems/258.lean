@@ -34,7 +34,7 @@ $\sum_n \frac{d(n)}{(a_1 ... a_n)}$ irrational, where $d(n)$ is the number of di
 This was proved affirmatively by Chojecki and GPT-5.4 Pro [Ch26], and formalised in Lean
 by ster-oc [St26].
 -/
-@[category research solved, AMS 11, formal_proof using lean4 at
+@[category research solved, AMS 11, proof_condition "Tao–Teräväinen theorem", formal_proof using lean4 at
   "https://live.lean-lang.org/#project=mathlib-v4.28.0&url=https://gist.githubusercontent.com/ster-oc/2b7adcf9d753cf6e29d782f7374cc57e/raw/689a8483895cbe147634dfbf2d7b1db93a3b5b5f/Erdos258.lean"]
 theorem erdos_258 : answer(True) ↔ ∀ (a : ℕ → ℕ), (∀ n, 2 ≤ a n) →
     Filter.Tendsto a Filter.atTop Filter.atTop →

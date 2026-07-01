@@ -61,7 +61,7 @@ is $1722$.
 The answer is negative: [APSSV26b] proves a stronger finiteness theorem, deducing it from
 Pollack [Po17]. Oriike [Or26] formalised the deduction in Lean.
 -/
-@[category research solved, AMS 11, formal_proof using lean4 at
+@[category research solved, AMS 11, proof_condition "Pollack (2017), Theorem 1.3", formal_proof using lean4 at
   "https://github.com/yuta0x89/ErdosProblems/blob/a1319f732cdee5140faf47d984e2c451c1184803/Erdos1141.lean"]
 theorem erdos_1141 :
     answer(False) ↔ Infinite { n | Erdos1141Prop n } := by
